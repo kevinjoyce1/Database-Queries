@@ -1,0 +1,82 @@
+-- Query 1. Get full student names and course names for courses taught by Ingraham. Order by course names and within that, order by last name.
+SELECT STUDENT.FirstName, STUDENT.LastName, COURSE.CourseName
+FROM STUDENT, COURSE, INSTRUCTOR, TEACH, ENROLL
+WHERE INSTRUCTOR.LastName = 'Ingraham' AND INSTRUCTOR.InstructorNum = TEACH.InstructorNum AND TEACH.CourseNum = COURSE.CourseNum 
+	AND ENROLL.StudentNum = STUDENT.StudentNum AND TEACH.CourseNum = ENROLL.CourseNum
+ORDER BY Course.CourseName, STUDENT.LastName;
+
+-- Query 2. Get full names and class of students taking both CMSC-220 and CMSC-370.
+SELECT DISTINCT FirstName, LastName, ClassCode
+FROM STUDENT
+WHERE STUDENT.StudentNum IN (SELECT ENROLL.StudentNum 
+							FROM ENROLL 
+							WHERE ENROLL.CourseNum = 'CMSC-220') 
+INTERSECT
+SELECT DISTINCT FirstName, LastName, ClassCode
+FROM STUDENT
+WHERE STUDENT.StudentNum IN (SELECT ENROLL.StudentNum 
+							FROM ENROLL 
+							WHERE ENROLL.CourseNum = 'CMSC-370');
+
+-- Query 3. Get full names of students who are taking classes taught by their advisor.
+SELECT DISTINCT STUDENT.FirstName, STUDENT.LastName
+FROM STUDENT, INSTRUCTOR, TEACH, ENROLL
+WHERE INSTRUCTOR.InstructorNum = STUDENT.AdvisorNum AND INSTRUCTOR.InstructorNum = TEACH.InstructorNum AND TEACH.CourseNum = ENROLL.CourseNum 
+	AND ENROLL.StudentNum = STUDENT.StudentNum;
+
+-- Query 4. Get full names of students taking courses with James Peterson or Mark Wadlow.
+SELECT STUDENT.FirstName, STUDENT.LastName 
+FROM STUDENT, ENROLL
+WHERE ENROLL.StudentNum = STUDENT.StudentNum AND (STUDENT.FirstName != 'James' OR Student.LastName != 'Peterson') AND 
+ENROLL.CourseNum IN (SELECT ENROLL.CourseNum
+					 FROM ENROLL, STUDENT 
+					 WHERE STUDENT.StudentNum = ENROLL.StudentNum AND STUDENT.FirstName = 'James' AND STUDENT.LastName = 'Peterson')
+UNION
+SELECT STUDENT.FirstName, STUDENT.LastName 
+FROM STUDENT, ENROLL
+WHERE ENROLL.StudentNum = STUDENT.StudentNum AND (STUDENT.FirstName != 'Mark' OR Student.LastName != 'Wadlow') AND 
+ENROLL.CourseNum IN (SELECT ENROLL.CourseNum
+					 FROM ENROLL, STUDENT 
+					 WHERE STUDENT.StudentNum = ENROLL.StudentNum AND STUDENT.FirstName = 'Mark' AND STUDENT.LastName = 'Wadlow')
+
+-- Query 5. Get full names of instructors who teach more than one section of the same course.
+SELECT DISTINCT INSTRUCTOR.FirstName, INSTRUCTOR.LastName
+FROM INSTRUCTOR, TEACH
+WHERE INSTRUCTOR.InstructorNum = TEACH.InstructorNum AND SectionNum > 1;
+
+-- Query 6. Without using 'or' in the query, get all names of students who have received either an 'A' or a 'B' in at least one course.
+SELECT DISTINCT STUDENT.FirstName, STUDENT.LastName 
+FROM (STUDENT JOIN GRADE ON STUDENT.StudentNum = GRADE.StudentNum)
+WHERE GRADE.Grade IN ('A', 'B')
+ORDER BY LastName;
+
+-- Query 7. Without using 'or' in the query and without using the previous query, get all names of students who have received wither 
+--			an 'A' or a 'B' in at least one course.
+SELECT DISTINCT FirstName, LastName
+FROM STUDENT, GRADE
+WHERE STUDENT.StudentNum = GRADE.StudentNum AND GRADE.Grade = 'A'
+UNION
+SELECT DISTINCT FirstName, LastName
+FROM STUDENT, GRADE
+WHERE STUDENT.StudentNum = GRADE.StudentNum AND GRADE.Grade = 'B'
+ORDER BY LastName;
+
+-- Query 8. Get the grade and the total number of each grade, ordered A through F.
+SELECT DISTINCT GRADE.Grade, COUNT (GRADE.Grade) AS 'Grade Count'
+FROM GRADE
+GROUP BY GRADE.Grade
+ORDER BY GRADE.Grade;
+
+-- Query 9. Get the ranks and total number of instructors in each rank ordered from most to fewest within each rank.
+SELECT INSTRUCTOR.Rank, COUNT (INSTRUCTOR.Rank) AS 'Count per Rank'
+FROM INSTRUCTOR
+GROUP BY INSTRUCTOR.Rank
+ORDER BY [Count per Rank] DESC;
+
+-- Query 10. Get student numbers and the total number of 'A' grades for each student who has 4 or more 'A's ordered by student number. 
+SELECT STUDENT.StudentNum, COUNT (GRADE.Grade) AS 'Number of A''s'
+FROM STUDENT, GRADE
+WHERE STUDENT.StudentNum = GRADE.StudentNum AND GRADE.Grade = 'A'
+GROUP BY STUDENT.StudentNum
+HAVING COUNT (GRADE.Grade) >= 4
+ORDER BY STUDENT.StudentNum;
